@@ -1,0 +1,26 @@
+{
+  "name": "yoprogrammer_be",
+  "version": "1.0.0",
+  "description": "Backend System for Yo programmer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himanshugupta0007/yoprogrammer_be.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/himanshugupta0007/yoprogrammer_be/issues"
+  },
+  "homepage": "https://github.com/himanshugupta0007/yoprogrammer_be#readme",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.161",
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
+  }
+}

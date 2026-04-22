@@ -107,6 +107,9 @@ dist
 # Docusaurus cache and generated files
 .docusaurus
 
+# AWS SAM build directory
+.aws-sam/
+
 # Serverless directories
 .serverless/
 

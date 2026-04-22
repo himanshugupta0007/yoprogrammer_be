@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: YoProgrammer Backend
+
+Parameters:
+  Stage:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+    Default: dev
+
+  CognitoUserPoolId:
+    Type: String
+
+  CognitoUserPoolClientId:
+    Type: String
+
+  BedrockModelId:
+    Type: String
+    Default: amazon.titan-embed-text-v2:0
+
+  SQSQueueUrl:
+    Type: String
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Timeout: 29
+    MemorySize: 512
+
+Resources:
+  # Define Lambda functions and other AWS resources here
+  Placeholder:
+    Type: AWS::CloudFormation::WaitConditionHandle
