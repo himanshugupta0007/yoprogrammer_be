@@ -81,6 +81,57 @@ Resources:
       Domain: !Sub "yoprogrammer-${Stage}"
       UserPoolId: !Ref UserPool
 
+  SnippetsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "yoprogrammer-snippets-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: snippetId
+          AttributeType: S
+        - AttributeName: language
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: snippetId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByLanguage
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: language
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ByCreatedAt
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  EmbeddingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "yoprogrammer-embeddings-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: snippetId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: snippetId
+          KeyType: HASH
+
 Outputs:
   UserPoolId:
     Value: !Ref UserPool
@@ -101,3 +152,28 @@ Outputs:
     Value: !Sub "yoprogrammer-${Stage}"
     Export:
       Name: !Sub "${AWS::StackName}-UserPoolDomain"
+
+  SnippetsTableName:
+    Value: !Ref SnippetsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-SnippetsTableName"
+
+  SnippetsTableArn:
+    Value: !GetAtt SnippetsTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SnippetsTableArn"
+
+  SnippetsTableStreamArn:
+    Value: !GetAtt SnippetsTable.StreamArn
+    Export:
+      Name: !Sub "${AWS::StackName}-SnippetsTableStreamArn"
+
+  EmbeddingsTableName:
+    Value: !Ref EmbeddingsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-EmbeddingsTableName"
+
+  EmbeddingsTableArn:
+    Value: !GetAtt EmbeddingsTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EmbeddingsTableArn"
