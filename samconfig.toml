@@ -1,0 +1,10 @@
+version = 0.1
+[dev.deploy.parameters]
+stack_name = "yoprogrammer-be"
+resolve_s3 = true
+s3_prefix = "yoprogrammer-be"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Stage=\"dev\" BedrockModelId=\"amazon.titan-embed-text-v2:0\" SQSQueueUrl=\"\""
+image_repositories = []
