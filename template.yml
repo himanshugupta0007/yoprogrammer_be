@@ -132,6 +132,21 @@ Resources:
         - AttributeName: snippetId
           KeyType: HASH
 
+  EmbeddingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "yoprogrammer-embedding-dlq-${Stage}"
+
+  EmbeddingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "yoprogrammer-embedding-queue-${Stage}"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EmbeddingDLQ.Arn
+        maxReceiveCount: 3
+
 Outputs:
   UserPoolId:
     Value: !Ref UserPool
@@ -177,3 +192,13 @@ Outputs:
     Value: !GetAtt EmbeddingsTable.Arn
     Export:
       Name: !Sub "${AWS::StackName}-EmbeddingsTableArn"
+
+  EmbeddingQueueUrl:
+    Value: !Ref EmbeddingQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-EmbeddingQueueUrl"
+
+  EmbeddingQueueArn:
+    Value: !GetAtt EmbeddingQueue.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EmbeddingQueueArn"
