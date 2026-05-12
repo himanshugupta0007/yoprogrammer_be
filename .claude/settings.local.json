@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(sam validate *)"
+      "Bash(sam validate *)",
+      "Bash(dir d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be /b)"
     ]
   }
 }

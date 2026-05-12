@@ -66,6 +66,19 @@ Resources:
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      SupportedIdentityProviders:
+        - COGNITO
+      CallbackURLs:
+        - http://localhost:3000/callback
+      LogoutURLs:
+        - http://localhost:3000
       AccessTokenValidity: 1
       IdTokenValidity: 1
       RefreshTokenValidity: 30
@@ -132,10 +145,113 @@ Resources:
         - AttributeName: snippetId
           KeyType: HASH
 
+  YoProgrammerApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Authorization,Content-Type'"
+        AllowMethods: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: !Sub "yoprogrammer-api-${Stage}"
+          version: "1.0"
+        paths:
+          /health:
+            get:
+              summary: Health check
+              security: []
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseTemplates:
+                      application/json: '{"status":"ok"}'
+              responses:
+                "200":
+                  description: OK
+
   EmbeddingDLQ:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "yoprogrammer-embedding-dlq-${Stage}"
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "yoprogrammer-lambda-role-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SnippetsTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt SnippetsTable.Arn
+                  - !Sub "${SnippetsTable.Arn}/index/*"
+        - PolicyName: EmbeddingsTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt EmbeddingsTable.Arn
+                  - !Sub "${EmbeddingsTable.Arn}/index/*"
+        - PolicyName: EmbeddingQueueAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt EmbeddingQueue.Arn
+        - PolicyName: BedrockInvokeAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
 
   EmbeddingQueue:
     Type: AWS::SQS::Queue
@@ -202,3 +318,8 @@ Outputs:
     Value: !GetAtt EmbeddingQueue.Arn
     Export:
       Name: !Sub "${AWS::StackName}-EmbeddingQueueArn"
+
+  ApiGatewayUrl:
+    Value: !Sub "https://${YoProgrammerApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
