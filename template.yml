@@ -14,14 +14,20 @@ Parameters:
     Type: String
     Default: amazon.titan-embed-text-v2:0
 
-  SQSQueueUrl:
-    Type: String
-
 Globals:
   Function:
     Runtime: nodejs24.x
+    Architectures:
+      - x86_64
     Timeout: 29
     MemorySize: 512
+    Environment:
+      Variables:
+        USER_POOL_CLIENT_ID: !Ref UserPoolClient
+        USER_POOL_ID: !Ref UserPool
+        POWERTOOLS_SERVICE_NAME: !Sub "${AWS::StackName}"
+        POWERTOOLS_METRICS_NAMESPACE: YoProgrammer
+        LOG_LEVEL: INFO
 
 Resources:
   UserPool:
@@ -65,6 +71,7 @@ Resources:
       GenerateSecret: false
       ExplicitAuthFlows:
         - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
@@ -243,16 +250,6 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                 Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
-        - PolicyName: CloudWatchLogsAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:PutLogEvents
-                Resource: "arn:aws:logs:*:*:*"
-
   EmbeddingQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -262,6 +259,183 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt EmbeddingDLQ.Arn
         maxReceiveCount: 3
+
+  AuthSignUpLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-auth-signup-${Stage}"
+      RetentionInDays: 7
+
+  AuthConfirmLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-auth-confirm-${Stage}"
+      RetentionInDays: 7
+
+  AuthSignInLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-auth-signin-${Stage}"
+      RetentionInDays: 7
+
+  AuthForgotPasswordLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-auth-forgot-password-${Stage}"
+      RetentionInDays: 7
+
+  AuthResetPasswordLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-auth-reset-password-${Stage}"
+      RetentionInDays: 7
+
+  AuthSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-auth-signup-${Stage}"
+      CodeUri: .
+      Handler: src/handlers/auth/signUp.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        SignUp:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /auth/signup
+            Method: POST
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/handlers/auth/signUp.ts
+
+  AuthConfirmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-auth-confirm-${Stage}"
+      CodeUri: .
+      Handler: src/handlers/auth/confirmSignUp.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        ConfirmSignUp:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /auth/confirm
+            Method: POST
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/handlers/auth/confirmSignUp.ts
+
+  AuthSignInFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-auth-signin-${Stage}"
+      CodeUri: src/
+      Handler: handlers/auth/signIn.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        SignIn:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /auth/signin
+            Method: POST
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/handlers/auth/signIn.ts
+
+  AuthForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-auth-forgot-password-${Stage}"
+      CodeUri: src/
+      Handler: handlers/auth/forgotPassword.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        ForgotPassword:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /auth/forgot-password
+            Method: POST
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/handlers/auth/forgotPassword.ts
+
+  AuthResetPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-auth-reset-password-${Stage}"
+      CodeUri: src/
+      Handler: handlers/auth/resetPassword.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        ResetPassword:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /auth/reset-password
+            Method: POST
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/handlers/auth/resetPassword.ts
+
+  EmbeddingDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-embedding-dlq-depth"
+      AlarmDescription: Messages in the embedding DLQ indicate failed processing
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt EmbeddingDLQ.QueueName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
 Outputs:
   UserPoolId:

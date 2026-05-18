@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(sam validate *)",
-      "Bash(dir d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be /b)"
+      "Bash(dir d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be /b)",
+      "PowerShell(Get-ChildItem \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\" -Recurse -Exclude node_modules,.aws-sam,.git -Name | Where-Object { $_ -notmatch \"node_modules|\\\\.aws-sam|\\\\.git\" })",
+      "Skill(aws-serverless)",
+      "Skill(aws-serverless:*)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\" -Recurse -Force | Select-Object -Property FullName | ForEach-Object { $_.FullName.Substring\\(\"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\".Length + 1\\) } | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\" -Depth 1 | Select-Object Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(python -c \"import sys,json; p=json.load\\(sys.stdin\\); print\\('exports:', 'exports' in p\\); print\\('types:', p.get\\('types'\\)\\); print\\('main:', p.get\\('main'\\)\\); print\\('module:', p.get\\('module'\\)\\)\")",
+      "Bash(python -c \"import sys,json; p=json.load\\(sys.stdin\\); print\\(json.dumps\\(p.get\\('exports'\\), indent=2\\)\\)\")",
+      "Bash(sam --version)",
+      "PowerShell(sam --version)"
     ]
   }
 }
