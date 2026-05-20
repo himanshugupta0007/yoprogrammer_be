@@ -16,7 +16,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: nodejs24.x
+    Runtime: python3.13
     Architectures:
       - x86_64
     Timeout: 29
@@ -250,6 +250,7 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                 Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/amazon.titan-embed-text-v2:0"
+
   EmbeddingQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -295,7 +296,7 @@ Resources:
     Properties:
       FunctionName: !Sub "yoprogrammer-auth-signup-${Stage}"
       CodeUri: .
-      Handler: src/handlers/auth/signUp.handler
+      Handler: src.handlers.auth.sign_up.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         SignUp:
@@ -306,22 +307,13 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        External:
-          - "@aws-sdk/*"
-        EntryPoints:
-          - src/handlers/auth/signUp.ts
 
   AuthConfirmFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yoprogrammer-auth-confirm-${Stage}"
       CodeUri: .
-      Handler: src/handlers/auth/confirmSignUp.handler
+      Handler: src.handlers.auth.confirm_sign_up.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         ConfirmSignUp:
@@ -332,22 +324,13 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        External:
-          - "@aws-sdk/*"
-        EntryPoints:
-          - src/handlers/auth/confirmSignUp.ts
 
   AuthSignInFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yoprogrammer-auth-signin-${Stage}"
-      CodeUri: src/
-      Handler: handlers/auth/signIn.handler
+      CodeUri: .
+      Handler: src.handlers.auth.sign_in.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         SignIn:
@@ -358,22 +341,13 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        External:
-          - "@aws-sdk/*"
-        EntryPoints:
-          - src/handlers/auth/signIn.ts
 
   AuthForgotPasswordFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yoprogrammer-auth-forgot-password-${Stage}"
-      CodeUri: src/
-      Handler: handlers/auth/forgotPassword.handler
+      CodeUri: .
+      Handler: src.handlers.auth.forgot_password.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         ForgotPassword:
@@ -384,22 +358,13 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        External:
-          - "@aws-sdk/*"
-        EntryPoints:
-          - src/handlers/auth/forgotPassword.ts
 
   AuthResetPasswordFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "yoprogrammer-auth-reset-password-${Stage}"
-      CodeUri: src/
-      Handler: handlers/auth/resetPassword.handler
+      CodeUri: .
+      Handler: src.handlers.auth.reset_password.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         ResetPassword:
@@ -410,15 +375,6 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        External:
-          - "@aws-sdk/*"
-        EntryPoints:
-          - src/handlers/auth/resetPassword.ts
 
   EmbeddingDLQAlarm:
     Type: AWS::CloudWatch::Alarm

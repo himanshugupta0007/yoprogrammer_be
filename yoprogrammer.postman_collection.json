@@ -7,110 +7,228 @@
     {
       "key": "baseUrl",
       "value": "https://<api-id>.execute-api.ap-south-1.amazonaws.com/dev",
-      "description": "Replace <api-id> with your actual API Gateway ID from stack outputs"
+      "type": "string"
     },
     {
-      "key": "idToken",
-      "value": ""
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"status\":\"ok\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Auth",
       "item": [
         {
-          "name": "1. Sign Up",
+          "name": "Sign Up",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/signup", "host": ["{{baseUrl}}"], "path": ["auth", "signup"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234\",\n  \"name\": \"Test User\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password1\",\n  \"name\": \"Test User\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"message\":\"Sign up successful. Check your email for a verification code.\"}"
+            },
+            {
+              "name": "409 User Exists",
+              "status": "Conflict",
+              "code": 409,
+              "body": "{\"message\":\"An account with this email already exists.\"}"
+            },
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\"message\":\"Invalid email address\"}"
+            }
+          ]
         },
         {
-          "name": "2. Confirm Sign Up",
+          "name": "Confirm Sign Up",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/confirm", "host": ["{{baseUrl}}"], "path": ["auth", "confirm"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "confirm"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"code\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"message\":\"Email confirmed. You can now sign in.\"}"
+            },
+            {
+              "name": "400 Invalid Code",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\"message\":\"Invalid verification code.\"}"
+            },
+            {
+              "name": "400 Expired Code",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\"message\":\"Verification code has expired. Please request a new one.\"}"
+            }
+          ]
         },
         {
-          "name": "3. Sign In",
+          "name": "Sign In",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.idToken) {",
-                  "  pm.collectionVariables.set('idToken', json.idToken);",
-                  "  console.log('idToken saved to collection variable');",
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', json.accessToken);",
                   "}"
-                ]
+                ],
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/signin", "host": ["{{baseUrl}}"], "path": ["auth", "signin"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signin"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password1\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"idToken\":\"eyJ...\",\"accessToken\":\"eyJ...\",\"refreshToken\":\"eyJ...\",\"expiresIn\":3600}"
+            },
+            {
+              "name": "401 Wrong Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\"message\":\"Incorrect email or password.\"}"
+            },
+            {
+              "name": "403 Not Confirmed",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\"message\":\"Email not confirmed. Please verify your account first.\"}"
+            }
+          ]
         },
         {
-          "name": "4. Forgot Password",
+          "name": "Forgot Password",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"message\":\"Password reset code sent to your email.\"}"
+            }
+          ]
         },
         {
-          "name": "5. Reset Password",
+          "name": "Reset Password",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"NewPass1234\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"NewPassword1\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Protected",
-      "item": [
-        {
-          "name": "Health Check (public)",
-          "request": {
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
-          }
-        },
-        {
-          "name": "Protected Route Example",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "{{idToken}}" }],
-            "url": { "raw": "{{baseUrl}}/your-protected-route", "host": ["{{baseUrl}}"], "path": ["your-protected-route"] }
-          }
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\"message\":\"Password reset successful. You can now sign in.\"}"
+            },
+            {
+              "name": "400 Invalid Code",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\"message\":\"Invalid reset code.\"}"
+            },
+            {
+              "name": "400 Expired Code",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\"message\":\"Reset code has expired. Please request a new one.\"}"
+            }
+          ]
         }
       ]
     }

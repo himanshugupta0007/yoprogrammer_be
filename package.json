@@ -2,13 +2,10 @@
   "name": "yoprogrammer_be",
   "version": "1.0.0",
   "description": "Backend System for Yo programmer",
-  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "sam:build": "sam build --use-container",
-    "sam:deploy": "if not exist C:\\samtmp mkdir C:\\samtmp&& set TEMP=C:\\samtmp&&set TMP=C:\\samtmp&& set AWS_REQUEST_CHECKSUM_CALCULATION=when_required&& sam deploy --region ap-south-1 --config-env dev --stack-name yoprogrammer-be",
-    "deploy": "if not exist C:\\samtmp mkdir C:\\samtmp&& set TEMP=C:\\samtmp&&set TMP=C:\\samtmp&& set AWS_REQUEST_CHECKSUM_CALCULATION=when_required&& sam build --use-container && sam deploy --region ap-south-1 --config-env dev --stack-name yoprogrammer-be",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "sam:build": "sam build",
+    "sam:deploy": "sam deploy --region ap-south-1 --config-env dev --stack-name yoprogrammer-be",
+    "deploy": "sam build && sam deploy --region ap-south-1 --config-env dev --stack-name yoprogrammer-be"
   },
   "repository": {
     "type": "git",
@@ -20,21 +17,5 @@
   "bugs": {
     "url": "https://github.com/himanshugupta0007/yoprogrammer_be/issues"
   },
-  "homepage": "https://github.com/himanshugupta0007/yoprogrammer_be#readme",
-  "dependencies": {
-    "@aws-lambda-powertools/logger": "^2.33.0",
-    "@aws-lambda-powertools/metrics": "^2.33.0",
-    "@aws-lambda-powertools/tracer": "^2.33.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
-    "@middy/core": "^7.5.0",
-    "@middy/http-error-handler": "^7.5.0",
-    "@middy/http-json-body-parser": "^7.5.0",
-    "esbuild": "^0.28.0",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@types/aws-lambda": "^8.10.161",
-    "@types/node": "^25.8.0",
-    "typescript": "^6.0.3"
-  }
+  "homepage": "https://github.com/himanshugupta0007/yoprogrammer_be#readme"
 }
