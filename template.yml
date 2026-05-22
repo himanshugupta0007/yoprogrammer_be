@@ -161,7 +161,6 @@ Resources:
         AllowHeaders: "'Authorization,Content-Type'"
         AllowMethods: "'*'"
       Auth:
-        DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt UserPool.Arn
@@ -174,7 +173,6 @@ Resources:
           /health:
             get:
               summary: Health check
-              security: []
               x-amazon-apigateway-integration:
                 type: mock
                 requestTemplates:
@@ -184,6 +182,56 @@ Resources:
                     statusCode: "200"
                     responseTemplates:
                       application/json: '{"status":"ok"}'
+              responses:
+                "200":
+                  description: OK
+          /auth/signup:
+            post:
+              summary: Register a new user
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthSignUpFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+          /auth/confirm:
+            post:
+              summary: Confirm email address
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthConfirmFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+          /auth/signin:
+            post:
+              summary: Sign in
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthSignInFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+          /auth/forgot-password:
+            post:
+              summary: Request password reset code
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthForgotPasswordFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+          /auth/reset-password:
+            post:
+              summary: Reset password with code
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthResetPasswordFunction.Arn}/invocations"
               responses:
                 "200":
                   description: OK
