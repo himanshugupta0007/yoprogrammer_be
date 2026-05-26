@@ -235,6 +235,75 @@ Resources:
               responses:
                 "200":
                   description: OK
+          /snippets:
+            post:
+              summary: Create a code snippet
+              security:
+                - CognitoAuthorizer: []
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateSnippetFunction.Arn}/invocations"
+              responses:
+                "201":
+                  description: Created
+            get:
+              summary: List snippets for the authenticated user
+              security:
+                - CognitoAuthorizer: []
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListSnippetsFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+          /snippets/{snippetId}:
+            get:
+              summary: Get a snippet by ID
+              security:
+                - CognitoAuthorizer: []
+              parameters:
+                - name: snippetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetSnippetFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
+            delete:
+              summary: Soft delete a snippet
+              security:
+                - CognitoAuthorizer: []
+              parameters:
+                - name: snippetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DeleteSnippetFunction.Arn}/invocations"
+              responses:
+                "204":
+                  description: No Content
+        components:
+          securitySchemes:
+            CognitoAuthorizer:
+              type: apiKey
+              name: Authorization
+              in: header
+              x-amazon-apigateway-authtype: cognito_user_pools
+              x-amazon-apigateway-authorizer:
+                providerARNs:
+                  - !GetAtt UserPool.Arn
+                type: cognito_user_pools
 
   EmbeddingDLQ:
     Type: AWS::SQS::Queue
@@ -263,6 +332,7 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
+                  - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                   - dynamodb:Query
                 Resource:
@@ -423,6 +493,111 @@ Resources:
             Method: POST
             Auth:
               Authorizer: NONE
+
+  GetSnippetLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-get-snippet-${Stage}"
+      RetentionInDays: 7
+
+  GetSnippetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-get-snippet-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.snippets.get_snippet.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SNIPPETS_TABLE_NAME: !Ref SnippetsTable
+      Events:
+        GetSnippet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /snippets/{snippetId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  DeleteSnippetLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-delete-snippet-${Stage}"
+      RetentionInDays: 7
+
+  DeleteSnippetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-delete-snippet-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.snippets.delete_snippet.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SNIPPETS_TABLE_NAME: !Ref SnippetsTable
+      Events:
+        DeleteSnippet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /snippets/{snippetId}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ListSnippetsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-list-snippets-${Stage}"
+      RetentionInDays: 7
+
+  ListSnippetsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-list-snippets-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.snippets.list_snippets.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SNIPPETS_TABLE_NAME: !Ref SnippetsTable
+      Events:
+        ListSnippets:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /snippets
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CreateSnippetLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-create-snippet-${Stage}"
+      RetentionInDays: 7
+
+  CreateSnippetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-create-snippet-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.snippets.create_snippet.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SNIPPETS_TABLE_NAME: !Ref SnippetsTable
+          EMBEDDING_QUEUE_URL: !Ref EmbeddingQueue
+      Events:
+        CreateSnippet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /snippets
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   EmbeddingDLQAlarm:
     Type: AWS::CloudWatch::Alarm
