@@ -21,7 +21,7 @@ def _res(status_code: int, body: dict) -> dict:
 
 
 @logger.inject_lambda_context
-@tracer.capture_lambda_handler
+@tracer.capture_lambda_handler(capture_response=False)
 def handler(event, context):
     try:
         body = json.loads(event.get("body") or "{}")
