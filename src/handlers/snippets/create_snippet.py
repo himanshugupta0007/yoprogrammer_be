@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from src.shared.powertools import logger, tracer
+from src.shared.tags import parse_input_tags, serialize_tags
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["SNIPPETS_TABLE_NAME"])
@@ -39,6 +40,8 @@ def handler(event, context):
     title = str(body.get("title", "")).strip()
     code = str(body.get("code", "")).strip()
     language = str(body.get("language", "")).strip()
+    notes = str(body.get("notes", "")).strip()
+    tags_raw = body.get("tags", [])
 
     if not title:
         return _res(400, {"message": "title is required"})
@@ -46,6 +49,16 @@ def handler(event, context):
         return _res(400, {"message": "code is required"})
     if not language:
         return _res(400, {"message": "language is required"})
+
+    if not isinstance(tags_raw, list):
+        return _res(400, {"message": "tags must be an array"})
+    if len(tags_raw) > 10:
+        return _res(400, {"message": "tags must have at most 10 items"})
+
+    try:
+        tags = parse_input_tags(tags_raw)
+    except ValueError as e:
+        return _res(400, {"message": str(e)})
 
     snippet_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -58,8 +71,12 @@ def handler(event, context):
         "language": language,
         "createdAt": created_at,
     }
+    if tags:
+        item["tags"] = tags
+    if notes:
+        item["notes"] = notes
 
-    logger.info("Creating snippet", userId=user_id, language=language)
+    logger.info("Creating snippet", userId=user_id, language=language, tagCount=len(tags))
 
     try:
         table.put_item(Item=item)
@@ -70,11 +87,11 @@ def handler(event, context):
     try:
         sqs.send_message(
             QueueUrl=EMBEDDING_QUEUE_URL,
-            MessageBody=json.dumps({"snippetId": snippet_id, "code": code}),
+            MessageBody=json.dumps({"snippetId": snippet_id, "userId": user_id, "code": code}),
         )
         logger.info("Snippet created", userId=user_id, snippetId=snippet_id)
     except ClientError as e:
         logger.error("Failed to queue embedding", userId=user_id, snippetId=snippet_id, error=str(e))
         raise
 
-    return _res(201, item)
+    return _res(201, {**item, "tags": serialize_tags(tags)})

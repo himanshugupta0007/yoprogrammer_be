@@ -5,6 +5,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from src.shared.powertools import logger, tracer
+from src.shared.tags import serialize_tags
 
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["SNIPPETS_TABLE_NAME"])
@@ -42,4 +43,4 @@ def handler(event, context):
     if not item or item.get("isDeleted"):
         return _res(404, {"message": "Snippet not found"})
 
-    return _res(200, item)
+    return _res(200, {**item, "tags": serialize_tags(item.get("tags", []))})

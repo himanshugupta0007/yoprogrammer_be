@@ -359,6 +359,7 @@ Resources:
                   - sqs:SendMessage
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
                 Resource: !GetAtt EmbeddingQueue.Arn
         - PolicyName: BedrockInvokeAccess
           PolicyDocument:
@@ -598,6 +599,33 @@ Resources:
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
+
+  GenerateEmbeddingLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-generate-embedding-${Stage}"
+      RetentionInDays: 7
+
+  GenerateEmbeddingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-generate-embedding-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.snippets.generate_embedding.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 300
+      Environment:
+        Variables:
+          EMBEDDINGS_TABLE_NAME: !Ref EmbeddingsTable
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+      Events:
+        EmbeddingQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt EmbeddingQueue.Arn
+            BatchSize: 5
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
 
   EmbeddingDLQAlarm:
     Type: AWS::CloudWatch::Alarm
