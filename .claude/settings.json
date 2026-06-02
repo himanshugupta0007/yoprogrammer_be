@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Remove-Item -Recurse -Force \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\node_modules\" -Confirm:$false)",
+      "PowerShell(aws cloudformation describe-stack-events --stack-name yoprogrammer-be --region ap-south-1 --query \"StackEvents[?contains\\('UPDATE_FAILED CREATE_FAILED', ResourceStatus\\)].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}\" --output table 2>&1)"
+    ]
+  }
+}

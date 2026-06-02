@@ -17,7 +17,8 @@
       "PowerShell(Get-ChildItem -Path \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\src\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName } | Sort-Object)",
       "Bash(aws cloudformation *)",
       "Bash(Get-ChildItem \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\\" -Name)",
-      "Bash(Remove-Item \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\tsconfig.json\" -ErrorAction SilentlyContinue)"
+      "Bash(Remove-Item \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\tsconfig.json\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\node_modules\")"
     ]
   }
 }

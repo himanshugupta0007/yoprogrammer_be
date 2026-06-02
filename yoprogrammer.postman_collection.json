@@ -1,18 +1,33 @@
 {
   "info": {
     "name": "YoProgrammer API",
+    "description": "Full API collection for YoProgrammer backend. Run Sign In first — idToken and snippetId are saved automatically to collection variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "https://<api-id>.execute-api.ap-south-1.amazonaws.com/dev",
-      "type": "string"
+      "type": "string",
+      "description": "Replace <api-id> with your API Gateway ID from sam deploy output"
+    },
+    {
+      "key": "idToken",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically by Sign In"
     },
     {
       "key": "accessToken",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "Populated automatically by Sign In"
+    },
+    {
+      "key": "snippetId",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically by Create Snippet"
     }
   ],
   "item": [
@@ -34,6 +49,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"status\":\"ok\"}"
             }
           ]
@@ -64,19 +80,29 @@
               "name": "200 Success",
               "status": "OK",
               "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Sign up successful. Check your email for a verification code.\"}"
             },
             {
-              "name": "409 User Exists",
+              "name": "409 User Already Exists",
               "status": "Conflict",
               "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"An account with this email already exists.\"}"
             },
             {
-              "name": "400 Bad Request",
+              "name": "400 Invalid Email",
               "status": "Bad Request",
               "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Invalid email address\"}"
+            },
+            {
+              "name": "400 Weak Password",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Password must be at least 8 characters and include uppercase and a number.\"}"
             }
           ]
         },
@@ -98,21 +124,24 @@
           },
           "response": [
             {
-              "name": "200 Success",
+              "name": "200 Confirmed",
               "status": "OK",
               "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Email confirmed. You can now sign in.\"}"
             },
             {
               "name": "400 Invalid Code",
               "status": "Bad Request",
               "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Invalid verification code.\"}"
             },
             {
               "name": "400 Expired Code",
               "status": "Bad Request",
               "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Verification code has expired. Please request a new one.\"}"
             }
           ]
@@ -124,9 +153,11 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.accessToken) {",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('idToken', json.idToken);",
                   "  pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "  console.log('Tokens saved to collection variables');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -152,18 +183,21 @@
               "name": "200 Success",
               "status": "OK",
               "code": 200,
-              "body": "{\"idToken\":\"eyJ...\",\"accessToken\":\"eyJ...\",\"refreshToken\":\"eyJ...\",\"expiresIn\":3600}"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"idToken\":\"eyJra...\",\"accessToken\":\"eyJra...\",\"refreshToken\":\"eyJjb...\",\"expiresIn\":3600}"
             },
             {
               "name": "401 Wrong Credentials",
               "status": "Unauthorized",
               "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Incorrect email or password.\"}"
             },
             {
-              "name": "403 Not Confirmed",
+              "name": "403 Email Not Confirmed",
               "status": "Forbidden",
               "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Email not confirmed. Please verify your account first.\"}"
             }
           ]
@@ -186,9 +220,10 @@
           },
           "response": [
             {
-              "name": "200 Success",
+              "name": "200 Code Sent",
               "status": "OK",
               "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Password reset code sent to your email.\"}"
             }
           ]
@@ -211,22 +246,337 @@
           },
           "response": [
             {
-              "name": "200 Success",
+              "name": "200 Password Reset",
               "status": "OK",
               "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Password reset successful. You can now sign in.\"}"
             },
             {
               "name": "400 Invalid Code",
               "status": "Bad Request",
               "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Invalid reset code.\"}"
             },
             {
               "name": "400 Expired Code",
               "status": "Bad Request",
               "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\"message\":\"Reset code has expired. Please request a new one.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Snippets",
+      "item": [
+        {
+          "name": "Create Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('snippetId', json.snippetId);",
+                  "  console.log('snippetId saved:', json.snippetId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Binary Search\",\n  \"language\": \"python\",\n  \"code\": \"def binary_search(arr, target):\\n    lo, hi = 0, len(arr) - 1\\n    while lo <= hi:\\n        mid = lo + (hi - lo) // 2\\n        if arr[mid] == target:\\n            return mid\\n        elif arr[mid] < target:\\n            lo = mid + 1\\n        else:\\n            hi = mid - 1\\n    return -1\",\n  \"notes\": \"Use lo + (hi-lo)//2 to avoid overflow on mid calculation\",\n  \"tags\": [\n    { \"type\": \"lang\", \"value\": \"python\" },\n    { \"type\": \"domain\", \"value\": \"algorithms\" },\n    { \"type\": \"project\", \"value\": \"yoprogrammer\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"userId\": \"us-east-1:abc123\",\n  \"title\": \"Binary Search\",\n  \"language\": \"python\",\n  \"code\": \"def binary_search(arr, target):...\",\n  \"notes\": \"Use lo + (hi-lo)//2 to avoid overflow on mid calculation\",\n  \"tags\": [\n    { \"type\": \"lang\", \"value\": \"python\" },\n    { \"type\": \"domain\", \"value\": \"algorithms\" },\n    { \"type\": \"project\", \"value\": \"yoprogrammer\" }\n  ],\n  \"createdAt\": \"2026-06-02T10:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Missing title",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"title is required\"}"
+            },
+            {
+              "name": "400 Missing code",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"code is required\"}"
+            },
+            {
+              "name": "400 Missing language",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"language is required\"}"
+            },
+            {
+              "name": "400 Too many tags",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"tags must have at most 10 items\"}"
+            },
+            {
+              "name": "400 Invalid tag type",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"invalid tag type 'xyz', must be one of: domain, general, lang, project\"}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Unauthorized\"}"
+            }
+          ]
+        },
+        {
+          "name": "List Snippets",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"items\": [\n    {\n      \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"userId\": \"us-east-1:abc123\",\n      \"title\": \"Binary Search\",\n      \"language\": \"python\",\n      \"code\": \"def binary_search(arr, target):...\",\n      \"notes\": \"Use lo + (hi-lo)//2 to avoid overflow\",\n      \"tags\": [\n        { \"type\": \"lang\", \"value\": \"python\" },\n        { \"type\": \"domain\", \"value\": \"algorithms\" }\n      ],\n      \"createdAt\": \"2026-06-02T10:00:00Z\"\n    }\n  ],\n  \"count\": 1\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Unauthorized\"}"
+            }
+          ]
+        },
+        {
+          "name": "List Snippets — filter by full tag (type:value)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets?tag=domain:algorithms",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets"],
+              "query": [
+                {
+                  "key": "tag",
+                  "value": "domain:algorithms",
+                  "description": "Exact match: type:value. Also works with lang:python, project:yoprogrammer, general:interview"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Filtered results",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"items\": [\n    {\n      \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"title\": \"Binary Search\",\n      \"language\": \"python\",\n      \"tags\": [\n        { \"type\": \"lang\", \"value\": \"python\" },\n        { \"type\": \"domain\", \"value\": \"algorithms\" }\n      ],\n      \"createdAt\": \"2026-06-02T10:00:00Z\"\n    }\n  ],\n  \"count\": 1\n}"
+            },
+            {
+              "name": "200 No matches",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"items\": [], \"count\": 0}"
+            }
+          ]
+        },
+        {
+          "name": "List Snippets — filter by value only",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets?tag=algorithms",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets"],
+              "query": [
+                {
+                  "key": "tag",
+                  "value": "algorithms",
+                  "description": "Value-only search — matches across all tag types (lang, domain, project, general)"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200 Cross-type match",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"items\": [\n    {\n      \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"title\": \"Binary Search\",\n      \"tags\": [{ \"type\": \"domain\", \"value\": \"algorithms\" }],\n      \"createdAt\": \"2026-06-02T10:00:00Z\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Snippet",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets/{{snippetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets", "{{snippetId}}"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"userId\": \"us-east-1:abc123\",\n  \"title\": \"Binary Search\",\n  \"language\": \"python\",\n  \"code\": \"def binary_search(arr, target):...\",\n  \"notes\": \"Use lo + (hi-lo)//2 to avoid overflow on mid calculation\",\n  \"tags\": [\n    { \"type\": \"lang\", \"value\": \"python\" },\n    { \"type\": \"domain\", \"value\": \"algorithms\" },\n    { \"type\": \"project\", \"value\": \"yoprogrammer\" }\n  ],\n  \"createdAt\": \"2026-06-02T10:00:00Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Snippet not found\"}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Unauthorized\"}"
+            }
+          ]
+        },
+        {
+          "name": "Search Snippets (Semantic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["search"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"binary search algorithm with overflow protection\",\n  \"topK\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Results",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"results\": [\n    {\n      \"snippetId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"title\": \"Binary Search\",\n      \"language\": \"python\",\n      \"code\": \"def binary_search(arr, target):...\",\n      \"notes\": \"Use lo + (hi-lo)//2 to avoid overflow on mid calculation\",\n      \"tags\": [{\"type\": \"domain\", \"value\": \"algorithms\"}],\n      \"createdAt\": \"2026-06-02T10:00:00Z\",\n      \"score\": 0.9342\n    }\n  ],\n  \"count\": 1\n}"
+            },
+            {
+              "name": "200 No Results",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"results\": [], \"count\": 0}"
+            },
+            {
+              "name": "400 Missing query",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\": \"query is required\"}"
+            },
+            {
+              "name": "502 Bedrock Unavailable",
+              "status": "Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\": \"Failed to embed query\"}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Snippet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "{{idToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/snippets/{{snippetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["snippets", "{{snippetId}}"]
+            }
+          },
+          "response": [
+            {
+              "name": "204 Deleted",
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Snippet not found\"}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"message\":\"Unauthorized\"}"
             }
           ]
         }

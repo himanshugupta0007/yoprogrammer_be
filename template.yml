@@ -258,6 +258,18 @@ Resources:
               responses:
                 "200":
                   description: OK
+          /search:
+            post:
+              summary: Semantic search over snippets
+              security:
+                - CognitoAuthorizer: []
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: OK
           /snippets/{snippetId}:
             get:
               summary: Get a snippet by ID
@@ -335,6 +347,7 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:DeleteItem
                   - dynamodb:Query
+                  - dynamodb:BatchGetItem
                 Resource:
                   - !GetAtt SnippetsTable.Arn
                   - !Sub "${SnippetsTable.Arn}/index/*"
@@ -347,6 +360,7 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
                   - dynamodb:Query
+                  - dynamodb:Scan
                 Resource:
                   - !GetAtt EmbeddingsTable.Arn
                   - !Sub "${EmbeddingsTable.Arn}/index/*"
@@ -374,7 +388,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "yoprogrammer-embedding-queue-${Stage}"
-      VisibilityTimeout: 60
+      VisibilityTimeout: 1800
       MessageRetentionPeriod: 86400
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt EmbeddingDLQ.Arn
@@ -611,7 +625,7 @@ Resources:
     Properties:
       FunctionName: !Sub "yoprogrammer-generate-embedding-${Stage}"
       CodeUri: .
-      Handler: src.handlers.snippets.generate_embedding.handler
+      Handler: src.handlers.generateEmbedding.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: 300
       Environment:
@@ -626,6 +640,35 @@ Resources:
             BatchSize: 5
             FunctionResponseTypes:
               - ReportBatchItemFailures
+
+  SearchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/yoprogrammer-search-${Stage}"
+      RetentionInDays: 7
+
+  SearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "yoprogrammer-search-${Stage}"
+      CodeUri: .
+      Handler: src.handlers.search.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 60
+      Environment:
+        Variables:
+          EMBEDDINGS_TABLE_NAME: !Ref EmbeddingsTable
+          SNIPPETS_TABLE_NAME: !Ref SnippetsTable
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+      Events:
+        Search:
+          Type: Api
+          Properties:
+            RestApiId: !Ref YoProgrammerApi
+            Path: /search
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
   EmbeddingDLQAlarm:
     Type: AWS::CloudWatch::Alarm
