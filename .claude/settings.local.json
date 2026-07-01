@@ -18,7 +18,8 @@
       "Bash(aws cloudformation *)",
       "Bash(Get-ChildItem \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\\" -Name)",
       "Bash(Remove-Item \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\tsconfig.json\" -ErrorAction SilentlyContinue)",
-      "Bash(Remove-Item -Recurse -Force \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\node_modules\")"
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\Learning\\\\BackendProject\\\\YoProgrammer\\\\yoprogrammer_be\\\\node_modules\")",
+      "Bash(mypy src/)"
     ]
   }
 }

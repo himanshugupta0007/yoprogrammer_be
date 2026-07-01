@@ -43,15 +43,37 @@ def handler(event, context):
     if name:
         user_attributes.append({"Name": "name", "Value": name})
 
+    is_dev = config["stage"] == "dev"
+
     try:
-        cognito.sign_up(
-            ClientId=config["user_pool_client_id"],
-            Username=email,
-            Password=password,
-            UserAttributes=user_attributes,
-        )
-        logger.info("Sign up successful", email=email)
-        return _res(200, {"message": "Sign up successful. Check your email for a verification code."})
+        if is_dev:
+            cognito.admin_create_user(
+                UserPoolId=config["user_pool_id"],
+                Username=email,
+                UserAttributes=user_attributes,
+                MessageAction="SUPPRESS",
+                TemporaryPassword=password,
+            )
+            cognito.admin_set_user_password(
+                UserPoolId=config["user_pool_id"],
+                Username=email,
+                Password=password,
+                Permanent=True,
+            )
+            logger.info("Sign up successful (dev auto-confirmed)", email=email)
+            return _res(200, {
+                "message": "Sign up successful.",
+                "devNote": "Account auto-confirmed. No email sent. Sign in directly.",
+            })
+        else:
+            cognito.sign_up(
+                ClientId=config["user_pool_client_id"],
+                Username=email,
+                Password=password,
+                UserAttributes=user_attributes,
+            )
+            logger.info("Sign up successful", email=email)
+            return _res(200, {"message": "Sign up successful. Check your email for a verification code."})
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         if error_code == "UsernameExistsException":

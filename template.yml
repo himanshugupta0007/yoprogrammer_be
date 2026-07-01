@@ -16,7 +16,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: python3.13
+    Runtime: python3.12
     Architectures:
       - x86_64
     Timeout: 29
@@ -25,6 +25,7 @@ Globals:
       Variables:
         USER_POOL_CLIENT_ID: !Ref UserPoolClient
         USER_POOL_ID: !Ref UserPool
+        STAGE: !Ref Stage
         POWERTOOLS_SERVICE_NAME: !Sub "${AWS::StackName}"
         POWERTOOLS_METRICS_NAMESPACE: YoProgrammer
         LOG_LEVEL: INFO
@@ -375,6 +376,16 @@ Resources:
                   - sqs:DeleteMessage
                   - sqs:GetQueueAttributes
                 Resource: !GetAtt EmbeddingQueue.Arn
+        - PolicyName: CognitoAdminAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminConfirmSignUp
+                Resource: !GetAtt UserPool.Arn
         - PolicyName: BedrockInvokeAccess
           PolicyDocument:
             Version: "2012-10-17"
